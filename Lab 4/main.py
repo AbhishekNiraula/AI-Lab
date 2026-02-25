@@ -11,17 +11,17 @@ from model import LogisticRegression
 # Reading the data
 st.title("Logistic Regression")
 
-data = pd.read_csv("Social_Network_Ads .csv")
+data = pd.read_csv("Social_Network_Ads.csv")
 
 # Removing the initial data titles.
 data = data.iloc[:, 1: ]
 
 # Get the actual values.
-x = data[["cgpa", "iq"]].values
-y = data["placement"].values
+x = data[["Age", "EstimatedSalary"]].values
+y = data["Purchased"].values
 
 # Scaling the features to have mean=0 and standard deviation=1.
-# This is necessary because features have different scales (CGPA: 0-10, IQ: 0-200).
+# This is necessary because features have different scales (AGE: 20-80, IQ: 10000-150000).
 # Scaling ensures faster convergence in gradient descent and prevents features with larger values from dominating.
 scaler = StandardScaler()
 x_scaled = scaler.fit_transform(x)
@@ -37,8 +37,8 @@ with col2:
     fig, ax = plt.subplots()
     
     scatter = ax.scatter(x[:, 0], x[:, 1], c = y)
-    ax.set_xlabel("CGPA")
-    ax.set_ylabel("IQ")
+    ax.set_xlabel("Age")
+    ax.set_ylabel("EstimatedSalary")
     
     st.pyplot(fig)
 
@@ -88,21 +88,29 @@ if "trained" in st.session_state:
     st.pyplot(fig)
 
 st.subheader("Predict")
-cgpa_input = st.number_input("Enter CGPA", 0.0, 10.0, 7.0)
-iq_input = st.number_input("Enter IQ", 0, 200, 50)
+age_input = st.number_input("Enter Age", 18, 65, 30)
+salary_input = st.number_input("Enter Estimated Salary", 15000, 150000, 50000)
 
-if st.button("Predict Performance"):
+if st.button("Predict Purchase"):
     if "model" not in st.session_state:
         st.error("You have not trained your model")
     else:
         model = st.session_state["model"]
         scaler = st.session_state["scaler"]
-        value = np.array([[cgpa_input, iq_input]])
+        value = np.array([[age_input, salary_input]])
         value_scaled = scaler.transform(value)
-        pred = model.prob(value_scaled[0])
         
-        if pred == 1:
-            st.success("You got Placement")
+        probability = model.predict(value_scaled[0])
+        prob_value = probability.item() if isinstance(probability, np.ndarray) else probability
+        
+        pred = model.prob(value_scaled[0])
+        pred_value = pred.item() if isinstance(pred, np.ndarray) else pred
+        
+        # Display probability
+        st.info(f"**Purchase Probability: {prob_value*100:.2f}%**")
+        
+        if pred_value == 1:
+            st.success("User will purchase")
         else:
-            st.error("Sorry No Placement")
+            st.warning("User will not purchase")
             
